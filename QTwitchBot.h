@@ -36,9 +36,9 @@ public:
     
     vector<UserCommandData> commandData;
     
-    QByteArray password;     //= "PASS oauth:9i1m0u8bqbulhpqpvlhm4sdp23wka2 \r\n";
-    QByteArray username;     //= "NICK static_void_bot \r\n";
-    QByteArray channelName;  // = "#internal_static_void";
+    QByteArray password;
+    QByteArray username;
+    QByteArray channelName;
     
 public slots:
     
