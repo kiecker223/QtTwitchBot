@@ -4,8 +4,8 @@
 #include "TwitchBotDialog.h"
 #include <QDebug>
 
-#define COMMAND_LIST ((MainWindow *)parentWidget())->getQTwitchBotData()
 #define PARENT       ((MainWindow *)parentWidget())
+#define COMMAND_LIST ((MainWindow *)parentWidget())->getQTwitchBotData()
 
 
 CommandDialog::CommandDialog(QWidget *parent) :
@@ -32,10 +32,9 @@ CommandDialog::CommandDialog(QWidget *parent) :
 
 CommandDialog::~CommandDialog()
 {
-    this->clearFocus();
-    
     // Save on exit
-    saveData();
+    
+    this->clearFocus();
     
     // Cleanup
     if (dataToSend != nullptr)
@@ -86,65 +85,71 @@ void CommandDialog::on_DialogOutputNum_valueChanged(int arg1)
 
 void CommandDialog::syncDialogData()
 {
-    if (COMMAND_LIST->at(ui->commandSelect->currentIndex()).arraySize >= 1)
-        ui->responseEdit_1->setText(COMMAND_LIST->at(ui->commandSelect->currentIndex()).response[0]);
+    if (COMMAND_LIST->at(ui->commandSelect->currentIndex()).responses.size() >= 1)
+        ui->responseEdit_1->setText(COMMAND_LIST->at(ui->commandSelect->currentIndex()).responses[0]);
     
-    if (COMMAND_LIST->at(ui->commandSelect->currentIndex()).arraySize >= 2)
-        ui->responseEdit_2->setText(COMMAND_LIST->at(ui->commandSelect->currentIndex()).response[1]);
+    if (COMMAND_LIST->at(ui->commandSelect->currentIndex()).responses.size() >= 2)
+        ui->responseEdit_2->setText(COMMAND_LIST->at(ui->commandSelect->currentIndex()).responses[1]);
     
-    if (COMMAND_LIST->at(ui->commandSelect->currentIndex()).arraySize >= 3)
-        ui->responseEdit_3->setText(COMMAND_LIST->at(ui->commandSelect->currentIndex()).response[2]);
+    if (COMMAND_LIST->at(ui->commandSelect->currentIndex()).responses.size() >= 3)
+        ui->responseEdit_3->setText(COMMAND_LIST->at(ui->commandSelect->currentIndex()).responses[2]);
     
-    if (COMMAND_LIST->at(ui->commandSelect->currentIndex()).arraySize >= 4)
-        ui->responseEdit_4->setText(COMMAND_LIST->at(ui->commandSelect->currentIndex()).response[3]);
+    if (COMMAND_LIST->at(ui->commandSelect->currentIndex()).responses.size() >= 4)
+        ui->responseEdit_4->setText(COMMAND_LIST->at(ui->commandSelect->currentIndex()).responses[3]);
     
     dataToSend->command = ui->commandSelect->currentText();
-    ui->DialogOutputNum->setValue(COMMAND_LIST->at(ui->commandSelect->currentIndex()).arraySize);
+    ui->DialogOutputNum->setValue(COMMAND_LIST->at(ui->commandSelect->currentIndex()).responses.size());
 }
 
 void CommandDialog::saveData()
 {
+    // For debugging
+    vector<UserCommandData> *commandPtr = COMMAND_LIST;
+    
     int i = ui->commandSelect->currentIndex();
-    dataToSend->arraySize = ui->DialogOutputNum->value();
-    dataToSend->response = new QString[dataToSend->arraySize];
+    
+    // Nested if statements to avoid the "assert" statement that they have
+    if (COMMAND_LIST->size() > 0)
+        if (COMMAND_LIST->at(i).responses.size() != ui->DialogOutputNum->value())
+            COMMAND_LIST->at(i).responses.resize(ui->DialogOutputNum->value());
     
     // Existing commands
     if (i < COMMAND_LIST->size())
     {
         if (COMMAND_LIST->at(i).command == ui->commandSelect->currentText())
         {
-            if (COMMAND_LIST->at(i).arraySize >= 1 && ui->responseEdit_1->toPlainText().size() >= 1)
-                COMMAND_LIST->at(i).response[0].append(ui->responseEdit_1->toPlainText());
+            if (COMMAND_LIST->at(i).responses.size() >= 1 && ui->responseEdit_1->toPlainText().size() >= 1)
+                COMMAND_LIST->at(i).responses[0] = (ui->responseEdit_1->toPlainText());
             
-            if (COMMAND_LIST->at(i).arraySize >= 2 && ui->responseEdit_2->toPlainText().size() >= 1)
-                COMMAND_LIST->at(i).response[1].append(ui->responseEdit_2->toPlainText());
+            if (COMMAND_LIST->at(i).responses.size() >= 2 && ui->responseEdit_2->toPlainText().size() >= 1)
+                COMMAND_LIST->at(i).responses[1] = (ui->responseEdit_2->toPlainText());
             
-            if (COMMAND_LIST->at(i).arraySize >= 3 && ui->responseEdit_3->toPlainText().size() >= 1)
-                COMMAND_LIST->at(i).response[2].append(ui->responseEdit_3->toPlainText());
+            if (COMMAND_LIST->at(i).responses.size() >= 3 && ui->responseEdit_3->toPlainText().size() >= 1)
+                COMMAND_LIST->at(i).responses[2] = (ui->responseEdit_3->toPlainText());
             
-            if (COMMAND_LIST->at(i).arraySize == 4 && ui->responseEdit_4->toPlainText().size() >= 1)
-                COMMAND_LIST->at(i).response[3].append(ui->responseEdit_4->toPlainText());
+            if (COMMAND_LIST->at(i).responses.size() == 4 && ui->responseEdit_4->toPlainText().size() >= 1)
+                COMMAND_LIST->at(i).responses[3] = (ui->responseEdit_4->toPlainText());
         }
     }
     // New command
     else
     {
-        if (dataToSend->arraySize >= 1 && ui->responseEdit_1->toPlainText().size() >= 1)
-            dataToSend->response[0] = ui->responseEdit_1->toPlainText();
+        if (dataToSend->responses.size() >= 1 && ui->responseEdit_1->toPlainText().size() >= 1)
+            dataToSend->responses[0] = ui->responseEdit_1->toPlainText();
+       
+        if (dataToSend->responses.size() >= 2 && ui->responseEdit_2->toPlainText().size() >= 1)
+            dataToSend->responses[1] = ui->responseEdit_2->toPlainText();
         
-        if (dataToSend->arraySize >= 2 && ui->responseEdit_2->toPlainText().size() >= 1)
-            dataToSend->response[1] = ui->responseEdit_2->toPlainText();
+        if (dataToSend->responses.size() >= 3 && ui->responseEdit_3->toPlainText().size() >= 1)
+            dataToSend->responses[2] = ui->responseEdit_3->toPlainText();
         
-        if (dataToSend->arraySize >= 3 && ui->responseEdit_3->toPlainText().size() >= 1)
-            dataToSend->response[2] = ui->responseEdit_3->toPlainText();
-        
-        if (dataToSend->arraySize >= 4 && ui->responseEdit_4->toPlainText().size() >= 1)
-            dataToSend->response[3] = ui->responseEdit_4->toPlainText();
+        if (dataToSend->responses.size() >= 4 && ui->responseEdit_4->toPlainText().size() >= 1)
+            dataToSend->responses[3] = ui->responseEdit_4->toPlainText();
     }
     
-    for (int i = 0; i < dataToSend->arraySize; ++i)
+    for (int i = 0; i < dataToSend->responses.size(); ++i)
     {
-        qDebug() << dataToSend->response[i];
+        qDebug() << dataToSend->responses[i];
     }
     
     // If it isn't a duplicate append it
@@ -196,4 +201,7 @@ void CommandDialog::on_deleteButton_released()
     COMMAND_LIST->erase(COMMAND_LIST->begin() + ui->commandSelect->currentIndex());
 }
 
-
+void CommandDialog::on_forceSave_clicked()
+{
+   saveData();
+}

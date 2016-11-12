@@ -1,0 +1,13 @@
+INPUT(
+./release\main.o
+./release\MainWindow.o
+./release\QTwitchBot.o
+./release\TwitchBotDialog.o
+./release\CommandDialog.o
+./release\UserData.o
+./release\moc_MainWindow.o
+./release\moc_QTwitchBot.o
+./release\moc_TwitchBotDialog.o
+./release\moc_CommandDialog.o
+./release\moc_UserData.o
+);

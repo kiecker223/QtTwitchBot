@@ -5,7 +5,7 @@
 
 
 QTwitchBot::QTwitchBot(QWidget *parent) : QTextBrowser(parent)
-{
+{    
     m_socket = new QTcpSocket(this);
     
     QObject::connect(m_socket, SIGNAL(readyRead()), this, SLOT(onMessageRecieve()));
@@ -20,6 +20,21 @@ QTwitchBot::~QTwitchBot()
     writeCommandDataToFile();
     
     delete m_socket;
+}
+
+void QTwitchBot::setPassword(const QByteArray &newPassword)
+{
+    this->password = newPassword;    
+}
+
+void QTwitchBot::setUsername(const QByteArray &newUserName)
+{
+    this->username = newUserName;
+}
+
+void QTwitchBot::setChannelName(const QByteArray &newChannelName)
+{
+    this->channelName = newChannelName;
 }
 
 void QTwitchBot::onMessageRecieve()
@@ -71,14 +86,14 @@ void QTwitchBot::onMessageRecieve()
                 std::string t_temp = std::to_string(m_messagesSent);
                 
                 this->append(t_temp.c_str());
-                if (commandData[i].arraySize > 1)
+                if (commandData[i].responses.size() > 1)
                 {
-                    int t_randNum = qrand() % commandData[i].arraySize;
-                    m_socket->write("PRIVMSG #" + channelName.toLower() + " : " + commandData[i].response[t_randNum].toLatin1() + "\r\n");
+                    int t_randNum = qrand() % commandData[i].responses.size();
+                    m_socket->write("PRIVMSG #" + channelName.toLower() + " : " + commandData[i].responses[t_randNum].toLatin1() + "\r\n");
                 }
                 else
                 {
-                    m_socket->write("PRIVMSG #" + channelName.toLower() + " : " + commandData[i].response[0].toLatin1() + "\r\n");
+                    m_socket->write("PRIVMSG #" + channelName.toLower() + " : " + commandData[i].responses[0].toLatin1() + "\r\n");
                 }
             }
         }
@@ -105,27 +120,24 @@ void QTwitchBot::writeCommandDataToFile()
         return;
     }
     
-    QTextStream t_dataToWrite(&t_file);
+    QTextStream fileTextStream(&t_file);
     
     for (int i = 0; i < commandData.size(); ++i)
     {
-        t_dataToWrite << "|command|: " << commandData[i].command << endl;
-        t_dataToWrite << "|arraySize|: " << commandData[i].arraySize << endl;
+        fileTextStream << "|command|: " << commandData[i].command << "`" << endl;
+        fileTextStream << "|arraySize|:" << commandData.size() << "`" << endl;
         
-        int t_arrSize = commandData[i].arraySize;
-        
-        if (t_arrSize == 1)
+        for (int i_ = 0; i_ < commandData[i].responses.size() - 1; ++i_)
         {
-            t_dataToWrite << "|response0|:" << commandData[i].response[0] << endl;
+            commandData[i].responses[i].remove("\n");
+            fileTextStream << "|response" << i_ << "|:" << commandData[i].responses[i_] << "`" << endl;
         }
-        else
-        {
-            for (int i_ = 0; i_ < t_arrSize - 1; ++i_)
-            {
-                t_dataToWrite << "|response" << i_ << "|:" << commandData[i].response[i_] << endl;
-            }
-        }
+        fileTextStream << "|endCommand|:" << "`" << endl;
     }
+    
+    fileTextStream << "|username|:" << username << "`" << endl;
+    fileTextStream << "|channelName|:" << channelName << "`" << endl;
+    fileTextStream << "|password|:" << password << "`" << endl;
     
     t_file.close();
 }
@@ -138,81 +150,119 @@ void QTwitchBot::readCommandDataFromFile()
     
     if (t_file.open(QIODevice::ReadOnly | QIODevice::Text) && t_file.exists())
     {
-        QString t_data = t_file.readAll();
-        for (int b = 0; b < t_data.length();)
-        {
-            if (t_data[b] == QChar('|'))
+     
+        QString fileText = t_file.readAll();
+        
+        for (int n = 0; n < fileText.size();)
+        {        
+            int tagEndLoc = fileText.indexOf(":");
+            int endLineLoc = fileText.indexOf("`");
+            int storedArrSize = 0;
+            QString currentTag; 
+            
+            for (int j = 0; j < tagEndLoc; ++j)
             {
-                int t_tagEndLoc = t_data.indexOf(":");
-                QString t_tag;
-                
-                for (int i = b; i < t_tagEndLoc; ++i)
-                {
-                    t_tag += t_data.at(i);
-                }
-                
-                if (t_tag == "|command|")
-                {
-                    int t_endLineLoc = t_data.indexOf("\n");
-                    QString t_commandToAppend;
-                    
-                    for (int i = t_tagEndLoc + 1; i < t_endLineLoc; ++i)
-                    {
-                        t_commandToAppend += t_data.at(i);
-                    }
-                    
-                    t_commandToAppend.remove(" ");                    
-                    t_dataToAppend = new UserCommandData();
-                    t_dataToAppend->command = t_commandToAppend;
-                    t_data.remove(0, t_endLineLoc + 1);
-                }
-                else if (t_tag == "|arraySize|")
-                {
-                    int t_endLineLoc = t_data.indexOf("\n");
-                    QString t_arrayNumToAppend;
-                    
-                    for (int i = t_tagEndLoc + 1; i < t_endLineLoc; ++i)
-                    {
-                        t_arrayNumToAppend += t_data.at(i);
-                    }
-                    
-                    t_dataToAppend->arraySize = t_arrayNumToAppend.toInt();
-                    t_dataToAppend->response = new QString[t_dataToAppend->arraySize];
-                    t_data.remove(0, t_endLineLoc + 1);
-                }
-                for (int a = 0; a < 4; ++a)
-                {
-                    QString t_tagToCompare = "|response";
-                    t_tagToCompare += std::to_string(a).c_str();
-                    t_tagToCompare += "|";
-                    if (t_tag == t_tagToCompare)
-                    {
-                        int t_endLineLoc = t_data.indexOf("\n");
-                        QString t_responseToAppend;
-                        
-                        for (int i = t_tagEndLoc + 1; i < t_endLineLoc; ++i)
-                        {
-                            t_responseToAppend += t_data.at(i);
-                        }
-                        t_dataToAppend->response[a] = (t_responseToAppend);
-                        if (t_dataToAppend->arraySize == 1)
-                        {
-                            commandData.push_back(*t_dataToAppend);
-                            delete t_dataToAppend;
-                        }
-                        t_data.remove(0, t_endLineLoc + 1);
-                        break;
-                    }
-                }
+                currentTag += fileText.at(j);
             }
-            else
+            
+            if (currentTag == "|command|")
             {
-                ++b;
+                QString commandToAppend;
+                
+                for (int b = tagEndLoc + 1; b < endLineLoc; ++b)
+                {
+                    commandToAppend.append(fileText.at(b));
+                }
+                
+                commandToAppend.remove(" ");
+                
+                if (!t_dataToAppend)
+                    t_dataToAppend = new UserCommandData;
+                t_dataToAppend->command = commandToAppend;                    
             }
+            else if (currentTag == "|arraySize|")
+            {
+                QString tempString;
+                
+                for (int b = tagEndLoc + 1; b < endLineLoc; ++b)
+                {
+                    tempString.append(fileText.at(b));
+                }
+                
+                tempString.remove(" ");
+                int size = tempString.toInt();
+                storedArrSize = size;
+            }
+            else if (currentTag == "|username|")
+            {
+                QString tempUsername;
+                
+                for (int b = tagEndLoc + 1; b < endLineLoc; ++b)
+                {
+                    tempUsername.append(fileText.at(b));
+                }
+                
+                username = tempUsername.toLatin1();
+            }
+            else if (currentTag == "|channelName|")
+            {
+                QString tempChannelName;
+                
+                for (int b = tagEndLoc + 1; b < endLineLoc; ++b)
+                {
+                    tempChannelName.append(fileText.at(b));
+                }
+                
+                channelName = tempChannelName.toLatin1();
+            }
+            else if (currentTag == "|password|")
+            {
+                QString tempPassword;
+                
+                for (int b = tagEndLoc + 1; b < endLineLoc; ++b)
+                {
+                    tempPassword.append(fileText.at(b));
+                }
+                
+                password = tempPassword.toLatin1();
+            }
+            else if (currentTag.contains("|response"))
+            {
+                int currentResponse;
+                
+                QString tempStr = currentTag;
+                tempStr.remove(0, 9);
+                tempStr.remove(1, 2);
+                
+                currentResponse = tempStr.toInt();
+                
+                QString response;
+                
+                for (int i = tagEndLoc + 1; i < endLineLoc; ++i)
+                {
+                    response.append(fileText.at(i));
+                }
+                
+                t_dataToAppend->responses.push_back(response);
+                
+                // Trigger an assertion if we have more responses than
+                // we stored, not likely to be triggered
+                Q_ASSERT(!(currentResponse > storedArrSize));
+            }
+            else if (currentTag == "|endCommand|")
+            {
+                commandData.push_back(*t_dataToAppend);
+                delete t_dataToAppend;
+            }
+            fileText.remove(0, fileText.indexOf("\n") + 1);
         }
+        t_file.close();
     }
-    
-    t_file.close();
+    else
+    {
+        this->append("No file was found, don't "
+                     "worry this might be your first time using it");
+    }        
 }
 
 void QTwitchBot::connect()
@@ -230,20 +280,20 @@ void QTwitchBot::connect()
     
     this->append("Connection Started... \n");
     
-    if (m_socket->waitForConnected())
+    m_socket->waitForConnected();
+    
+    if (m_socket->isValid())
     {
-        if (m_socket->isValid())
-        {
-            this->append("Connection established");
-        }
-        
-        this->append("Starting upload");
-        
-        m_socket->write("PASS oauth:" + password.toLower() + "\r\n");
-        m_socket->write("NICK " + username.toLower() + "\r\n");
-        m_socket->write("USER " + username.toLower() + " " + username.toLower() + " " + username.toLower() + " : " + username.toLower() + " \r\n");
-        m_socket->write("JOIN #" + channelName.toLower() + "\r\n");
+        this->append("Connection established");
     }
+    
+    this->append("Starting upload");
+    
+    m_socket->write("PASS oauth:" + password.toLower() + "\r\n");
+    m_socket->write("NICK " + username.toLower() + "\r\n");
+    m_socket->write("USER " + username.toLower() + " " + username.toLower() + " " + username.toLower() + " : " + username.toLower() + " \r\n");
+    m_socket->write("JOIN #" + channelName.toLower() + "\r\n");
+    
     
     m_timer.start();
 }

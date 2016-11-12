@@ -2,7 +2,6 @@
 #define QTWITCHBOT_H
 
 #include <QtNetwork/QTcpSocket>
-#include <vector>
 #include <QWidget>
 #include <QUrl>
 #include <QElapsedTimer>
@@ -15,19 +14,21 @@
 #include <QChar>
 #include <QString>
 #include <iostream>
+#include <QtGui/qmatrix4x4.h>
 
 using std::vector;
 
 struct UserCommandData
 {
-    QString  command;
-    QString *response;
-    int      arraySize;
+    QString          command;
+    QVector<QString> responses;
 };
 
 class QTwitchBot : public QTextBrowser
 {
     Q_OBJECT
+    
+    QMatrix4x4 mat3;
     
 public:
     
@@ -42,6 +43,9 @@ public:
     
 public slots:
     
+    void setPassword(const QByteArray &newPassword);
+    void setUsername(const QByteArray &newUserName);
+    void setChannelName(const QByteArray &newChannelName);
     void writeCommandDataToFile();
     void readCommandDataFromFile();
     void onMessageRecieve();

@@ -24,26 +24,8 @@ MainWindow::MainWindow(QWidget *parent) :
     // test
     connect(ui->loginButton, SIGNAL(clicked(bool)), this, SLOT(openUserInfo()));
     
-    if (!m_settings.contains("channel") && !m_settings.contains("username") && !m_settings.contains("password"))
-    {
-        ui->textBrowser->append("You haven't set up your information yet");
-        ui->textBrowser->append("Press \"login\" to set up your information");
-    }
-    else
-    {
-        if (m_settings.contains("channel"))
-        {
-            ui->textBrowser->channelName = m_settings.property("channel").toByteArray();
-        }
-        if (m_settings.contains("username"))
-        {
-            ui->textBrowser->username = m_settings.property("username").toByteArray();
-        }
-        if (m_settings.contains("password"))
-        {
-            ui->textBrowser->password = m_settings.property("password").toByteArray();
-        }
-    }
+    
+    
 }
 
 MainWindow::~MainWindow()
@@ -58,23 +40,32 @@ vector<UserCommandData> *MainWindow::getQTwitchBotData()
 
 void MainWindow::setPassword(const QByteArray &newpassword)
 {
-    ui->textBrowser->password = newpassword;
-    
-    m_settings.setValue("password", newpassword);
+    ui->textBrowser->setPassword(newpassword);
 }
 
 void MainWindow::setUsername(const QByteArray &newusername)
 {
-    ui->textBrowser->username = newusername;
-    
-    m_settings.setValue("username", newusername);
+    ui->textBrowser->setUsername(newusername);
 }
 
 void MainWindow::setChannel(const QByteArray &channel)
 {
-    ui->textBrowser->channelName = channel;
-    
-    m_settings.setValue("channel", channel);
+    ui->textBrowser->setChannelName(channel);
+}
+
+const QByteArray &MainWindow::Password() const
+{
+    return ui->textBrowser->password;
+}
+
+const QByteArray &MainWindow::UserName() const
+{
+    return ui->textBrowser->username;
+}
+
+const QByteArray &MainWindow::ChannelName() const
+{
+    return ui->textBrowser->channelName;
 }
 
 bool MainWindow::confirmNotDuplicate(const UserCommandData &data)
@@ -82,7 +73,7 @@ bool MainWindow::confirmNotDuplicate(const UserCommandData &data)
     for (int i = 0; i < ui->textBrowser->commandData.size(); ++i)
     {
         if (ui->textBrowser->commandData[i].command == data.command && 
-            ui->textBrowser->commandData[i].arraySize == data.arraySize)
+            ui->textBrowser->commandData[i].responses.size() == data.responses.size())
         {
             return false;
         }

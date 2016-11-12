@@ -44,6 +44,7 @@ private slots:
     // Only slots I actually use
     void on_commandSelect_currentIndexChanged(int index);
     void on_deleteButton_released();    
+    void on_forceSave_clicked();
     
 private:
     

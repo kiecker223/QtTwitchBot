@@ -28,6 +28,9 @@ public:
     void setPassword(const QByteArray &newpassword);
     void setUsername(const QByteArray &username);
     void setChannel(const QByteArray &channel);
+    const QByteArray &Password() const;
+    const QByteArray &UserName() const;
+    const QByteArray &ChannelName() const;
     
     bool confirmNotDuplicate(const UserCommandData &data);
     

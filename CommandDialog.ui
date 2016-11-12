@@ -144,6 +144,19 @@
     <string>Delete Current Command</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="forceSave">
+   <property name="geometry">
+    <rect>
+     <x>470</x>
+     <y>130</y>
+     <width>101</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Force Save</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections>
