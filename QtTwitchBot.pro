@@ -19,13 +19,17 @@ SOURCES += main.cpp\
     QTwitchBot.cpp \
     TwitchBotDialog.cpp \
     CommandDialog.cpp \
-    UserData.cpp
+    UserData.cpp \
+    OpenGLBase.cpp \
+    BaseScene.cpp
 
 HEADERS  += MainWindow.h \
     QTwitchBot.h \
     TwitchBotDialog.h \
     CommandDialog.h \
-    UserData.h
+    UserData.h \
+    OpenGLBase.h \
+    BaseScene.h
 
 FORMS    += MainWindow.ui \
     CommandDialog.ui \

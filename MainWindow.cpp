@@ -23,9 +23,6 @@ MainWindow::MainWindow(QWidget *parent) :
     
     // test
     connect(ui->loginButton, SIGNAL(clicked(bool)), this, SLOT(openUserInfo()));
-    
-    
-    
 }
 
 MainWindow::~MainWindow()

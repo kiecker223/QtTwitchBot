@@ -13,8 +13,7 @@
 #include <QDesktopServices>
 #include <QChar>
 #include <QString>
-#include <iostream>
-#include <QtGui/qmatrix4x4.h>
+
 
 using std::vector;
 
@@ -28,8 +27,6 @@ class QTwitchBot : public QTextBrowser
 {
     Q_OBJECT
     
-    QMatrix4x4 mat3;
-    
 public:
     
     QTwitchBot(QWidget *parent = 0);
@@ -40,6 +37,8 @@ public:
     QByteArray password;
     QByteArray username;
     QByteArray channelName;
+    
+    QByteArray getNextStr();
     
 public slots:
     
@@ -54,9 +53,9 @@ public slots:
     
 private:
     
-    int           m_messagesSent;
-    QElapsedTimer m_timer;
-    QTcpSocket   *m_socket;    
+    int            m_messagesSent;
+    QElapsedTimer  m_timer;
+    QTcpSocket    *m_pSocket;
     
 };
 

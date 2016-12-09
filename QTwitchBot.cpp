@@ -6,9 +6,9 @@
 
 QTwitchBot::QTwitchBot(QWidget *parent) : QTextBrowser(parent)
 {    
-    m_socket = new QTcpSocket(this);
+    m_pSocket = new QTcpSocket(this);
     
-    QObject::connect(m_socket, SIGNAL(readyRead()), this, SLOT(onMessageRecieve()));
+    QObject::connect(m_pSocket, SIGNAL(readyRead()), this, SLOT(onMessageRecieve()));
     
     this->append("Socket bound");
     
@@ -19,7 +19,7 @@ QTwitchBot::~QTwitchBot()
 {
     writeCommandDataToFile();
     
-    delete m_socket;
+    delete m_pSocket;
 }
 
 void QTwitchBot::setPassword(const QByteArray &newPassword)
@@ -39,7 +39,7 @@ void QTwitchBot::setChannelName(const QByteArray &newChannelName)
 
 void QTwitchBot::onMessageRecieve()
 {
-    QString t_data = m_socket->readLine();
+    QString data = m_pSocket->readLine();
     
     if (m_timer.elapsed() >= 30000)
     {
@@ -52,35 +52,35 @@ void QTwitchBot::onMessageRecieve()
     
     // If its a message
     // TODO: Make cleaner!
-    if (t_data.contains("PRIVMSG #"))
+    if (data.contains("PRIVMSG #"))
     {
-        t_data.remove("PRIVMSG #");
+        data.remove("PRIVMSG #");
         
-        int t_indexOfUsernameEnd = t_data.indexOf("!");
+        int indexOfUsernameEnd = data.indexOf("!");
         
         QString t_messagerUsername = "";
         
-        for (int i = 1; i < t_indexOfUsernameEnd; ++i)
+        for (int i = 1; i < indexOfUsernameEnd; ++i)
         {
-            t_messagerUsername += t_data.at(i);
+            t_messagerUsername += data.at(i);
         }
         
-        t_data.remove(t_messagerUsername);
-        t_data.remove(QString(":!@.tmi.twitch.tv"));
-        t_data.remove(QString(channelName));
+        data.remove(t_messagerUsername);
+        data.remove(QString(":!@.tmi.twitch.tv"));
+        data.remove(QString(channelName));
         
         for (int i = 0; i < t_messagerUsername.length(); ++i)
         {
-            t_data.insert(i, t_messagerUsername.at(i).toLatin1());
+            data.insert(i, t_messagerUsername.at(i).toLatin1());
         }
         
-        this->append(t_data);
+        this->append(data);
         
         // message should look something like : twitchUser: Message
         // Now to check for commands
         for (int i = 0; i < commandData.size(); ++i)
         {
-            if (t_data.contains(commandData[i].command) && m_messagesSent < 100)
+            if (data.contains(commandData[i].command) && m_messagesSent < 100)
             {
                 m_messagesSent++;
                 std::string t_temp = std::to_string(m_messagesSent);
@@ -88,23 +88,23 @@ void QTwitchBot::onMessageRecieve()
                 this->append(t_temp.c_str());
                 if (commandData[i].responses.size() > 1)
                 {
-                    int t_randNum = qrand() % commandData[i].responses.size();
-                    m_socket->write("PRIVMSG #" + channelName.toLower() + " : " + commandData[i].responses[t_randNum].toLatin1() + "\r\n");
+                    int randNum = qrand() % commandData[i].responses.size();
+                    m_pSocket->write("PRIVMSG #" + channelName.toLower() + " : " + commandData[i].responses[randNum].toLatin1() + "\r\n");
                 }
                 else
                 {
-                    m_socket->write("PRIVMSG #" + channelName.toLower() + " : " + commandData[i].responses[0].toLatin1() + "\r\n");
+                    m_pSocket->write("PRIVMSG #" + channelName.toLower() + " : " + commandData[i].responses[0].toLatin1() + "\r\n");
                 }
             }
         }
     }    
     // Ping request?
-    if (t_data.contains(QString("PING :tmi.twitch.tv")))
+    if (data.contains(QString("PING :tmi.twitch.tv")))
     {
-        m_socket->write("PONG :tmi.twitch.tv \r\n");
+        m_pSocket->write("PONG :tmi.twitch.tv \r\n");
     }
     
-    if (m_socket->canReadLine())
+    if (m_pSocket->canReadLine())
     {
         onMessageRecieve();
     }
@@ -112,15 +112,15 @@ void QTwitchBot::onMessageRecieve()
 
 void QTwitchBot::writeCommandDataToFile()
 {
-    QFile t_file("Bot_data.data");
+    QFile file("Bot_data.data");
     
-    if (!t_file.open(QIODevice::ReadWrite | QIODevice::Truncate | QIODevice::Text))
+    if (!file.open(QIODevice::ReadWrite | QIODevice::Truncate | QIODevice::Text))
     {
         this->append("Well it appears that we couldn't create the neccessary file for this app");
         return;
     }
     
-    QTextStream fileTextStream(&t_file);
+    QTextStream fileTextStream(&file);
     
     for (int i = 0; i < commandData.size(); ++i)
     {
@@ -139,22 +139,22 @@ void QTwitchBot::writeCommandDataToFile()
     fileTextStream << "|channelName|:" << channelName << "`" << endl;
     fileTextStream << "|password|:" << password << "`" << endl;
     
-    t_file.close();
+    file.close();
 }
 
 void QTwitchBot::readCommandDataFromFile()
 {
-    UserCommandData *t_dataToAppend;
+    UserCommandData *dataToAppend;
     
-    QFile t_file("Bot_data.data");
+    QFile file("Bot_data.data");
     
-    if (t_file.open(QIODevice::ReadOnly | QIODevice::Text) && t_file.exists())
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text) && file.exists())
     {
      
-        QString fileText = t_file.readAll();
+        QString fileText = file.readAll();
         
         for (int n = 0; n < fileText.size();)
-        {        
+        {
             int tagEndLoc = fileText.indexOf(":");
             int endLineLoc = fileText.indexOf("`");
             int storedArrSize = 0;
@@ -176,9 +176,9 @@ void QTwitchBot::readCommandDataFromFile()
                 
                 commandToAppend.remove(" ");
                 
-                if (!t_dataToAppend)
-                    t_dataToAppend = new UserCommandData;
-                t_dataToAppend->command = commandToAppend;                    
+                if (!dataToAppend)
+                    dataToAppend = new UserCommandData;
+                dataToAppend->command = commandToAppend;                    
             }
             else if (currentTag == "|arraySize|")
             {
@@ -243,7 +243,7 @@ void QTwitchBot::readCommandDataFromFile()
                     response.append(fileText.at(i));
                 }
                 
-                t_dataToAppend->responses.push_back(response);
+                dataToAppend->responses.push_back(response);
                 
                 // Trigger an assertion if we have more responses than
                 // we stored, not likely to be triggered
@@ -251,12 +251,12 @@ void QTwitchBot::readCommandDataFromFile()
             }
             else if (currentTag == "|endCommand|")
             {
-                commandData.push_back(*t_dataToAppend);
-                delete t_dataToAppend;
+                commandData.push_back(*dataToAppend);
+                delete dataToAppend;
             }
             fileText.remove(0, fileText.indexOf("\n") + 1);
         }
-        t_file.close();
+        file.close();
     }
     else
     {
@@ -267,33 +267,32 @@ void QTwitchBot::readCommandDataFromFile()
 
 void QTwitchBot::connect()
 {
-    QString t_serverName = "irc.chat.twitch.tv";
+    QString serverName = "irc.chat.twitch.tv";
     
-    if (m_socket->state() == QTcpSocket::ConnectedState 
-      || m_socket->state() == QTcpSocket::ConnectingState)
+    if (m_pSocket->state() == QTcpSocket::ConnectedState 
+      || m_pSocket->state() == QTcpSocket::ConnectingState)
     {
         this->append("we are already connected");
         return;
     }
     
-    m_socket->connectToHost(t_serverName, 6667);
+    m_pSocket->connectToHost(serverName, 6667);
     
     this->append("Connection Started... \n");
     
-    m_socket->waitForConnected();
+    m_pSocket->waitForConnected();
     
-    if (m_socket->isValid())
+    if (m_pSocket->isValid())
     {
         this->append("Connection established");
     }
     
     this->append("Starting upload");
     
-    m_socket->write("PASS oauth:" + password.toLower() + "\r\n");
-    m_socket->write("NICK " + username.toLower() + "\r\n");
-    m_socket->write("USER " + username.toLower() + " " + username.toLower() + " " + username.toLower() + " : " + username.toLower() + " \r\n");
-    m_socket->write("JOIN #" + channelName.toLower() + "\r\n");
-    
+    m_pSocket->write("PASS oauth:" + password.toLower() + "\r\n");
+    m_pSocket->write("NICK " + username.toLower() + "\r\n");
+    m_pSocket->write("USER " + username.toLower() + " " + username.toLower() + " " + username.toLower() + " : " + username.toLower() + " \r\n");
+    m_pSocket->write("JOIN #" + channelName.toLower() + "\r\n");
     
     m_timer.start();
 }
@@ -301,9 +300,9 @@ void QTwitchBot::connect()
 void QTwitchBot::disconnect()
 {
     // Very last step
-    m_socket->write("PRIVMSG #" + channelName.toLower() + " : Well everyone, see you another time (^ U ^)/ \r\n");
-    m_socket->flush();
-    m_socket->disconnectFromHost();
+    m_pSocket->write("PRIVMSG #" + channelName.toLower() + " : Well everyone, see you another time (^ U ^)/ \r\n");
+    m_pSocket->flush();
+    m_pSocket->disconnectFromHost();
     
     this->append("Disconnected");
 }
